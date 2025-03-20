@@ -333,10 +333,10 @@ class OpenAIHelper:
             response = await self.client.images.generate(
                 prompt=prompt,
                 n=1,
-                model=self.config['image_model'],
+                model="dall-e-3",  # Принудительно используем DALL-E 3
+                size="1024x1024",
                 quality=self.config['image_quality'],
-                style=self.config['image_style'],
-                size=self.config['image_size']
+                style=self.config['image_style']
             )
 
             if len(response.data) == 0:
@@ -373,17 +373,19 @@ class OpenAIHelper:
             raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
 
     async def transcribe(self, filename):
-        """
-        Transcribes the audio file using the Whisper model.
-        """
+        """Транскрибирует аудиофайл с помощью OpenAI Whisper"""
         try:
             with open(filename, "rb") as audio:
-                prompt_text = self.config['whisper_prompt']
-                result = await self.client.audio.transcriptions.create(model="whisper-1", file=audio, prompt=prompt_text)
-                return result.text
+                response = await self.client.audio.transcriptions.create(
+                    model="whisper-1",  # Используем Whisper
+                    file=audio,
+                    prompt="Распознай этот текст:"
+                )
+            return response.text
         except Exception as e:
             logging.exception(e)
-            raise Exception(f"⚠️ _{localized_text('error', self.config['bot_language'])}._ ⚠️\n{str(e)}") from e
+            return f"Ошибка распознавания: {str(e)}"
+
 
     @retry(
         reraise=True,
